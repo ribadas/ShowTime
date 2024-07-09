@@ -1,0 +1,289 @@
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignación de Tickets a Gestores</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .gestores {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+        .gestor {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+            width: 250px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        .gestor:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .gestor h2 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .carga-info {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .tickets {
+            margin-top: 10px;
+        }
+        .ticket {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ticket .button-container {
+            display: flex;
+            align-items: center;
+        }
+        .ticket .button-container button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 3px;
+            transition: background-color 0.3s ease;
+        }
+        .ticket .button-container button:hover {
+            background-color: #218838;
+        }
+        .ticket.high {
+            background-color: #ff5252; /* Rojo */
+        }
+        .ticket.medium {
+            background-color: #ffc107; /* Amarillo */
+        }
+        .ticket.low {
+            background-color: #ced4da; /* Gris */
+        }
+        #pool, #resueltos {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        #pool:hover, #resueltos:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        #pool h2, #resueltos h2 {
+            margin-top: 0;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .tickets-resueltos {
+            margin-top: 10px;
+        }
+        .tickets-resueltos .ticket {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>Asignación de Tickets a Gestores</h1>
+    <button onclick="generarTicket()">Generar Ticket</button>
+
+    <div class="gestores">
+        <div class="gestor" id="gestor1">
+            <h2>Gestor 1</h2>
+            <div class="carga-info">Carga en Curso: <span id="cargaGestor1">0</span> / 6 Man days</div>
+            <div class="tickets"></div>
+        </div>
+        <div class="gestor" id="gestor2">
+            <h2>Gestor 2</h2>
+            <div class="carga-info">Carga en Curso: <span id="cargaGestor2">0</span> / 6 Man days</div>
+            <div class="tickets"></div>
+        </div>
+        <div class="gestor" id="gestor3">
+            <h2>Gestor 3</h2>
+            <div class="carga-info">Carga en Curso: <span id="cargaGestor3">0</span> / 6 Man days</div>
+            <div class="tickets"></div>
+        </div>
+    </div>
+
+    <div id="pool">
+        <h2>Pool de Tickets No Asignados</h2>
+        <div class="tickets"></div>
+    </div>
+
+    <div id="resueltos">
+        <h2>Tickets Resueltos</h2>
+        <div class="tickets-resueltos"></div>
+    </div>
+
+    <script>
+        const SCORE_VALUES = ["High", "Medium", "Low"];
+        const SIZE_VALUES = ["XL", "L", "M", "L"];
+        const SIZE_TO_MAN_DAYS = {
+            "XL": 4,
+            "L": 3,
+            "M": 2,
+            "S": 1
+        };
+
+        const gestores = [
+            { id: 1, nombre: "Gestor 1", tickets: [], carga: 0 },
+            { id: 2, nombre: "Gestor 2", tickets: [], carga: 0 },
+            { id: 3, nombre: "Gestor 3", tickets: [], carga: 0 }
+        ];
+
+        const pool = [];
+        let ticketsResueltos = [];
+
+        function generarTicket() {
+            const now = new Date();
+            const ticketId = `${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+            const score = SCORE_VALUES[Math.floor(Math.random() * SCORE_VALUES.length)];
+            const size = SIZE_VALUES[Math.floor(Math.random() * SIZE_VALUES.length)];
+            const manDays = SIZE_TO_MAN_DAYS[size];
+            const ticket = {
+                id: ticketId,
+                score,
+                size,
+                manDays,
+                name: `${ticketId} ${score}-${manDays}`
+            };
+
+            asignarTicket(ticket);
+            actualizarInterfaz();
+        }
+
+        function asignarTicket(ticket) {
+            // Ordenar gestores por carga y por tipo de ticket (High, Medium, Low)
+            gestores.sort((a, b) => a.carga - b.carga);
+
+            for (let gestor of gestores) {
+                // Verificar si el gestor puede tomar el ticket
+                if (gestor.carga + ticket.manDays <= 6) {
+                    // Asignar el ticket al gestor
+                    gestor.tickets.push(ticket);
+                    gestor.carga += ticket.manDays;
+                    return;
+                }
+            }
+
+            // Si ningún gestor puede tomar el ticket, añadirlo al pool
+            pool.push(ticket);
+        }
+
+        function resolverTicket(gestorId, ticketId) {
+            const gestor = gestores.find(g => g.id === gestorId);
+            const ticketIndex = gestor.tickets.findIndex(t => t.id === ticketId);
+
+            if (ticketIndex !== -1) {
+                const ticket = gestor.tickets[ticketIndex];
+                ticketsResueltos.push({ gestor: `Gestor ${gestorId}`, ticket: ticket.name });
+                gestor.tickets.splice(ticketIndex, 1);
+                gestor.carga -= ticket.manDays;
+
+                // Intentar asignar un ticket del pool si hay capacidad disponible en el gestor
+                if (pool.length > 0) {
+                    const nuevoTicket = pool.shift();
+                    asignarTicket(nuevoTicket);
+                }
+            }
+
+            actualizarInterfaz();
+        }
+
+        function actualizarInterfaz() {
+            for (let gestor of gestores) {
+                const gestorDiv = document.getElementById(`gestor${gestor.id}`).querySelector('.tickets');
+                gestorDiv.innerHTML = '';
+                gestor.tickets.sort((a, b) => {
+                    if (a.score === b.score) {
+                        return SIZE_VALUES.indexOf(a.size) - SIZE_VALUES.indexOf(b.size);
+                    } else {
+                        return SCORE_VALUES.indexOf(a.score) - SCORE_VALUES.indexOf(b.score);
+                    }
+                });
+
+                for (let ticket of gestor.tickets) {
+                    const ticketDiv = document.createElement('div');
+                    ticketDiv.classList.add('ticket');
+                    ticketDiv.classList.add(ticket.score.toLowerCase());
+                    ticketDiv.innerHTML = `
+                        <span>${ticket.name}</span>
+                        <div class="button-container">
+                            <button onclick="resolverTicket(${gestor.id}, '${ticket.id}')">Resolver</button>
+                        </div>
+                    `;
+                    gestorDiv.appendChild(ticketDiv);
+                }
+
+                const cargaInfo = document.getElementById(`cargaGestor${gestor.id}`);
+                cargaInfo.textContent = gestor.carga;
+            }
+
+            // Mostrar pool de tickets no asignados
+            const poolDiv = document.getElementById('pool').querySelector('.tickets');
+            poolDiv.innerHTML = '';
+            for (let ticket of pool) {
+                const ticketDiv = document.createElement('div');
+                ticketDiv.classList.add('ticket');
+                ticketDiv.classList.add(ticket.score.toLowerCase());
+                ticketDiv.textContent = ticket.name;
+                poolDiv.appendChild(ticketDiv);
+            }
+
+            // Mostrar tickets resueltos
+            const resueltosDiv = document.getElementById('resueltos').querySelector('.tickets-resueltos');
+            resueltosDiv.innerHTML = '';
+            for (let ticket of ticketsResueltos) {
+                const ticketDiv = document.createElement('div');
+                ticketDiv.classList.add('ticket');
+                ticketDiv.textContent = `${ticket.gestor}: ${ticket.ticket}`;
+                resueltosDiv.appendChild(ticketDiv);
+            }
+        }
+
+        // Función auxiliar para añadir ceros a la izquierda si el número es menor que 10
+        function pad(number) {
+            if (number < 10) {
+                return `0${number}`;
+            }
+            return number;
+        }
+    </script>
+</body>
+</html>
+
+
