@@ -229,34 +229,35 @@
             return newTickets;
         }
 
-        function mostrarPool(pool) {
-            const poolContainer = document.getElementById('pool-de-casos');
-            poolContainer.innerHTML = '';
+function mostrarPool(pool) {
+    const poolContainer = document.getElementById('pool-de-casos');
+    poolContainer.innerHTML = '';
 
-            // Sort by score and size
-            const scoreOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
-            pool.sort((a, b) => {
-                if (scoreOrder[a.score] === scoreOrder[b.score]) {
-                    return b.size - a.size; // Sort by size descending
-                }
-                return scoreOrder[a.score] - scoreOrder[b.score]; // Sort by score ascending
-            });
-
-            pool.forEach(ticket => {
-                let ticketDiv = document.createElement('div');
-                ticketDiv.classList.add('ticket');
-                if (ticket.score === 'High') {
-                    ticketDiv.classList.add('high');
-                } else if (ticket.score === 'Medium') {
-                    ticketDiv.classList.add('medium');
-                } else if (ticket.score === 'Low') {
-                    ticketDiv.classList.add('low');
-                }
-                ticketDiv.innerHTML = `${ticket.secuencial} - ${ticket.score} - ${ticket.size}`;
-                autoAdjustFontSize(ticketDiv);
-                poolContainer.appendChild(ticketDiv);
-            });
+    // Sort by score (High > Medium > Low) and size ascending
+    const scoreOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+    pool.sort((a, b) => {
+        if (scoreOrder[a.score] === scoreOrder[b.score]) {
+            return a.size - b.size; // Sort by size ascending
         }
+        return scoreOrder[b.score] - scoreOrder[a.score]; // Sort by score descending
+    });
+
+    pool.forEach(ticket => {
+        let ticketDiv = document.createElement('div');
+        ticketDiv.classList.add('ticket');
+        if (ticket.score === 'High') {
+            ticketDiv.classList.add('high');
+        } else if (ticket.score === 'Medium') {
+            ticketDiv.classList.add('medium');
+        } else if (ticket.score === 'Low') {
+            ticketDiv.classList.add('low');
+        }
+        ticketDiv.innerHTML = `${ticket.secuencial} - ${ticket.score} - ${ticket.size}`;
+        autoAdjustFontSize(ticketDiv);
+        poolContainer.appendChild(ticketDiv);
+    });
+}
+
 
         function autoAdjustFontSize(element) {
             const maxWidth = 70; // Adjusted max width for the ticket
