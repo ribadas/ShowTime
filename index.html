@@ -153,7 +153,7 @@
             <!-- Gestores grid will be here -->
         </div>
         <div class="section">
-            <h2>Promedios de ticket resueltos por  Gestor</h2>
+            <h2>Promedio de tickets resueltos por  Gestor</h2>
             <table id="promedios-table">
                 <thead>
                     <tr>
@@ -175,7 +175,7 @@
             <button class="button" onclick="downloadCSV()">Descargar Resueltos CSV</button>
         </div>
         <div class="footer">
-            <p>Ingrese los parámetros definidos en el documento Back:</p>
+            <p>Parametros</p>
             <p>NumGestores: 3, MaxPorGestor: 12, NumTicketsBacklog: 60</p>
         </div>
         <div class="footnote">
@@ -314,35 +314,73 @@
             return ticketsDiv;
         }
 
-        function asignarTicket() {
-            if (pool.length === 0) {
-                alert("No hay tickets en el pool.");
-                return;
-            }
+function asignarTicket() {
+    if (pool.length === 0) {
+        alert("No hay tickets en el pool.");
+        return;
+    }
 
-            // Sort pool by descending risk (High > Medium > Low) and ascending size
-            pool.sort((a, b) => {
-                const scoreOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
-                if (scoreOrder[a.score] === scoreOrder[b.score]) {
-                    return a.size - b.size; // Sort by size ascending
-                }
-                return scoreOrder[b.score] - scoreOrder[a.score]; // Sort by score descending
-            });
-
-            // Find the gestor with the least tickets
-            let gestorIndex = gestores.reduce((minIndex, currentGestor, currentIndex, array) => 
-                currentGestor.tickets.length < array[minIndex].tickets.length ? currentIndex : minIndex, 0);
-
-            // Assign the ticket to the gestor if they haven't reached MaxPorGestor
-            if (gestores[gestorIndex].tickets.length < MaxPorGestor) {
-                let ticket = pool.shift(); // Get the first ticket from the sorted pool
-                gestores[gestorIndex].tickets.push(ticket);
-                mostrarPool(pool);
-                mostrarGestores(gestores);
-            } else {
-                alert("Todos los gestores han alcanzado el número máximo de tickets.");
-            }
+    // Sort pool by descending risk (High > Medium > Low) and ascending size
+    pool.sort((a, b) => {
+        const scoreOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+        if (scoreOrder[a.score] === scoreOrder[b.score]) {
+            return a.size - b.size; // Sort by size ascending
         }
+        return scoreOrder[b.score] - scoreOrder[a.score]; // Sort by score descending
+    });
+
+    // Find the gestores with the least tickets
+    let minTickets = Math.min(...gestores.map(g => g.tickets.length));
+    let leastBusyGestores = gestores.filter(g => g.tickets.length === minTickets);
+
+    // Filter out gestores who have reached MaxPorGestor
+    leastBusyGestores = leastBusyGestores.filter(g => g.tickets.length < MaxPorGestor);
+
+    if (leastBusyGestores.length === 0) {
+        alert("Todos los gestores han alcanzado el número máximo de tickets.");
+        return;
+    }
+
+    // If there's more than one gestor with the least tickets, use the PromediosTable logic
+    if (leastBusyGestores.length > 1) {
+        // Calculate SizeDistance and RiskDistance for each gestor
+        let bestPromedioScore = Math.max(...gestores.map(g => getPromedioScore(g.id)));
+        let bestPromedioRisk = Math.max(...gestores.map(g => getPromedioRisk(g.id)));
+
+        leastBusyGestores.forEach(gestor => {
+            gestor.sizeDistance = bestPromedioScore - getPromedioScore(gestor.id);
+            gestor.riskDistance = bestPromedioRisk - getPromedioRisk(gestor.id);
+        });
+
+        // Find the gestor with the highest SizeDistance or RiskDistance
+        leastBusyGestores.sort((a, b) => {
+            return (b.sizeDistance + b.riskDistance) - (a.sizeDistance + a.riskDistance);
+        });
+
+        // Assign the ticket to the gestor with the highest SizeDistance or RiskDistance
+        let ticket = pool.shift(); // Get the first ticket from the sorted pool
+        let selectedGestor = leastBusyGestores[0];
+        gestores.find(g => g.id === selectedGestor.id).tickets.push(ticket);
+    } else {
+        // Assign the ticket to the single gestor with the least tickets
+        let ticket = pool.shift(); // Get the first ticket from the sorted pool
+        gestores.find(g => g.id === leastBusyGestores[0].id).tickets.push(ticket);
+    }
+
+    mostrarPool(pool);
+    mostrarGestores(gestores);
+}
+
+function getPromedioScore(gestorId) {
+    const tickets = resueltos.filter(ticket => ticket.gestorId === gestorId);
+    return tickets.length ? calculateAverage(tickets.map(t => ({ score: t.score === 'High' ? 3 : t.score === 'Medium' ? 2 : 1 })), 'score') : 0;
+}
+
+function getPromedioRisk(gestorId) {
+    const tickets = resueltos.filter(ticket => ticket.gestorId === gestorId);
+    return tickets.length ? calculateAverage(tickets, 'size') : 0;
+}
+
 
         function resolverTicket(secuencial, gestorId) {
             let gestor = gestores.find(g => g.id === gestorId);
