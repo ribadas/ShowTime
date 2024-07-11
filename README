@@ -1,0 +1,74 @@
+README
+Asignación de Tickets a Gestores
+Introduction
+This project is a web application designed to manage the assignment of tickets to managers (gestores). The application allows the generation of a pool of tickets, assignment of tickets to gestores based on specific criteria, resolution of tickets, and calculation of average size and score of resolved tickets.
+
+Features
+Generate a pool of tickets with varying scores and sizes.
+Assign tickets to gestores based on their current load and performance.
+Resolve tickets and track the performance of each gestor.
+Download the list of resolved tickets as a CSV file.
+Display averages of ticket size and score for each gestor.
+HTML Structure
+The HTML file includes:
+
+Head Section
+
+Meta tags for character set and viewport settings.
+Title of the website.
+Link to Google Fonts for the Roboto font.
+Internal CSS for styling.
+Body Section
+
+Container for the entire content.
+Sections for generating the pool of tickets, displaying the pool, assigning tickets, displaying gestores, showing averages of resolved tickets, and listing resolved tickets.
+Buttons for generating the pool, assigning tickets, and downloading resolved tickets as a CSV file.
+CSS Styling
+Body and Container: Basic styling including font, colors, margins, and paddings.
+Buttons: Styling for buttons, including hover effects.
+Frames and Grids: Styling for displaying pool and gestores in grid format.
+Tickets: Different colors for high, medium, and low priority tickets.
+Tables: Basic table styling for displaying averages and resolved tickets.
+Footnotes: Styling for additional notes.
+JavaScript Functionality
+Variables
+
+NumGestores: Number of gestores.
+MaxPorGestor: Maximum tickets per gestor.
+NumTicketsBacklog: Number of tickets in the backlog.
+Arrays for storing the pool of tickets, gestores, and resolved tickets.
+Variable highestId to keep track of the highest ticket ID generated.
+Functions
+
+createCSVFiles(): Creates CSV files for the pool and resolved tickets.
+generarPool(): Generates a pool of tickets and displays them.
+crearBacklog(numTickets): Creates a backlog of tickets.
+mostrarPool(pool): Displays the pool of tickets.
+autoAdjustFontSize(element): Adjusts the font size of ticket elements to fit within their bounds.
+creaGestores(numGestores): Creates an array of gestores.
+mostrarGestores(gestores): Displays the gestores and their assigned tickets.
+mostrarTickets(gestor): Displays the tickets assigned to a gestor.
+asignarTicket(): Assigns one ticket at a time from the pool to the gestor with the least tickets. If there are multiple gestores with the same number of tickets, it calculates SizeDistance and RiskDistance to determine the best gestor.
+resolverTicket(secuencial, gestorId): Resolves a ticket and moves it to the resolved tickets list.
+calculateAverage(arr, prop): Calculates the average of a specified property for an array of objects.
+updatePromediosTable(): Updates the table displaying average size and score of resolved tickets per gestor.
+downloadCSV(): Generates and downloads a CSV file of resolved tickets.
+Usage Instructions
+Generate Pool of Tickets
+
+Click the "Generar Pool De Casos" button to generate a pool of tickets. This will display the pool in the "Pool" section.
+Assign Tickets
+
+Click the "Asignar Ticket" button to assign one ticket from the pool to the gestor with the least tickets. If there are multiple gestores with the same number of tickets, the system will use SizeDistance and RiskDistance to determine the best gestor.
+Resolve Tickets
+
+Click the "Resolver" button next to a ticket to resolve it. Resolved tickets are moved to the "Resueltos" section.
+View Averages
+
+The "Promedio de tickets resueltos por Gestor" section displays the average size and score of resolved tickets for each gestor.
+Download CSV
+
+Click the "Descargar Resueltos CSV" button to download a CSV file containing all resolved tickets.
+Notes
+The conversion of scores is as follows: "High" = 3, "Medium" = 2, "Low" = 1.
+Ensure that all buttons and functionality are tested for proper operation.
