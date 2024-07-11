@@ -1,0 +1,425 @@
+<<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Asignación de Tickets a Gestores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .section {
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #2980b9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #3498db;
+        }
+        .frame {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .frame h2 {
+            text-align: center;
+            margin-top: 0;
+        }
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+        }
+        .ticket {
+            padding: 2px;
+            border-radius: 5px;
+            display: inline-block;
+            width: 70px; /* Adjusted width for more characters */
+            height: 40px; /* Reduced height for pool tickets */
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #ffffff;
+            word-wrap: break-word;
+            position: relative;
+        }
+        .ticket button {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            right: 5px;
+            padding: 2px 5px;
+            font-size: 8px;
+            background-color: #2980b9;
+            color: #ffffff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .high {
+            background-color: #e74c3c;
+        }
+        .medium {
+            background-color: #f1c40f;
+            color: #333;
+        }
+        .low {
+            background-color: #95a5a6;
+        }
+        .gestor {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .resolved {
+            margin-top: 20px;
+        }
+        .resolved h2 {
+            text-align: center;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #7f8c8d;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        .footnote {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Asignación de Tickets a Gestores</h1>
+        <div class="section">
+            <button class="button" onclick="generarPool()">Generar Pool De Casos</button>
+        </div>
+        <div class="section frame">
+            <h2>Pool</h2>
+            <div class="grid" id="pool-de-casos">
+                <!-- Pool de casos will be here -->
+            </div>
+        </div>
+        <div class="section">
+            <button class="button" onclick="asignarTicket()">Asignar Ticket</button>
+        </div>
+        <div class="section" id="gestores-grid">
+            <!-- Gestores grid will be here -->
+        </div>
+        <div class="section">
+            <h2>Promedios de Gestores</h2>
+            <table id="promedios-table">
+                <thead>
+                    <tr>
+                        <th>Gestor</th>
+                        <th>Promedio Size</th>
+                        <th>Promedio Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Averages will be dynamically added here -->
+                </tbody>
+            </table>
+        </div>
+        <div class="section resolved">
+            <h2>Resueltos</h2>
+            <div id="resueltos">
+                <!-- Resolved tickets will be here -->
+            </div>
+            <button class="button" onclick="downloadCSV()">Descargar Resueltos CSV</button>
+        </div>
+        <div class="footer">
+            <p>Ingrese los parámetros definidos en el documento Back:</p>
+            <p>NumGestores: 3, MaxPorGestor: 12, NumTicketsBacklog: 60</p>
+        </div>
+        <div class="footnote">
+            <p>Nota: La conversión del puntaje se realiza de la siguiente manera: "High" = 3, "Medium" = 2, "Low" = 1.</p>
+        </div>
+    </div>
+    <script>
+        const NumGestores = 3;
+        const MaxPorGestor = 12;
+        const NumTicketsBacklog = 60;
+        let pool = [];
+        let gestores = creaGestores(NumGestores);
+        let resueltos = [];
+        let highestId = 0; // Variable to track the highest ticket ID
+
+        function createCSVFiles() {
+            const files = ['pool.csv', 'resueltos.csv'];
+            files.forEach(file => {
+                fetch(file, { method: 'HEAD' })
+                    .then(response => {
+                        if (!response.ok) {
+                            return fetch(file, { method: 'POST' });
+                        }
+                    })
+                    .catch(error => console.error('Error creating file:', error));
+            });
+        }
+
+        createCSVFiles();
+
+        function generarPool() {
+            pool = pool.concat(crearBacklog(NumTicketsBacklog));
+            mostrarPool(pool);
+            mostrarGestores(gestores);
+        }
+
+        function crearBacklog(numTickets) {
+            let newTickets = [];
+            const scores = ['High', 'Medium', 'Low'];
+            const sizes = [4, 3, 1, 1];
+            for (let i = 0; i < numTickets; i++) {
+                let score = scores[Math.floor(Math.random() * scores.length)];
+                let size = sizes[Math.floor(Math.random() * sizes.length)];
+                newTickets.push({
+                    secuencial: ++highestId,
+                    score: score,
+                    size: size
+                });
+            }
+            return newTickets;
+        }
+
+        function mostrarPool(pool) {
+            const poolContainer = document.getElementById('pool-de-casos');
+            poolContainer.innerHTML = '';
+
+            // Sort by score and size
+            const scoreOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+            pool.sort((a, b) => {
+                if (scoreOrder[a.score] === scoreOrder[b.score]) {
+                    return b.size - a.size; // Sort by size descending
+                }
+                return scoreOrder[a.score] - scoreOrder[b.score]; // Sort by score ascending
+            });
+
+            pool.forEach(ticket => {
+                let ticketDiv = document.createElement('div');
+                ticketDiv.classList.add('ticket');
+                if (ticket.score === 'High') {
+                    ticketDiv.classList.add('high');
+                } else if (ticket.score === 'Medium') {
+                    ticketDiv.classList.add('medium');
+                } else if (ticket.score === 'Low') {
+                    ticketDiv.classList.add('low');
+                }
+                ticketDiv.innerHTML = `${ticket.secuencial} - ${ticket.score} - ${ticket.size}`;
+                autoAdjustFontSize(ticketDiv);
+                poolContainer.appendChild(ticketDiv);
+            });
+        }
+
+        function autoAdjustFontSize(element) {
+            const maxWidth = 70; // Adjusted max width for the ticket
+            const maxHeight = 30; // Reduced max height for the ticket
+            let fontSize = 10; // Initial font size
+            element.style.fontSize = fontSize + 'px';
+            while ((element.scrollWidth > maxWidth || element.scrollHeight > maxHeight) && fontSize > 5) {
+                fontSize--;
+                element.style.fontSize = fontSize + 'px';
+            }
+        }
+
+        function creaGestores(numGestores) {
+            let gestores = [];
+            for (let i = 0; i < numGestores; i++) {
+                gestores.push({
+                    id: i + 1,
+                    tickets: []
+                });
+            }
+            return gestores;
+        }
+
+        function mostrarGestores(gestores) {
+            const gestoresContainer = document.getElementById('gestores-grid');
+            gestoresContainer.innerHTML = '';
+
+            gestores.forEach(gestor => {
+                let gestorDiv = document.createElement('div');
+                gestorDiv.classList.add('gestor');
+                const totalSize = gestor.tickets.reduce((acc, ticket) => acc + ticket.size, 0);
+                gestorDiv.innerHTML = `<strong>Gestor ${gestor.id}</strong> - Tickets: ${gestor.tickets.length} - Total Size: ${totalSize}`;
+                gestorDiv.appendChild(mostrarTickets(gestor));
+                gestoresContainer.appendChild(gestorDiv);
+            });
+        }
+
+        function mostrarTickets(gestor) {
+            let ticketsDiv = document.createElement('div');
+            ticketsDiv.classList.add('tickets');
+            gestor.tickets.forEach(ticket => {
+                let ticketDiv = document.createElement('div');
+                ticketDiv.classList.add('ticket');
+                if (ticket.score === 'High') {
+                    ticketDiv.classList.add('high');
+                } else if (ticket.score === 'Medium') {
+                    ticketDiv.classList.add('medium');
+                } else if (ticket.score === 'Low') {
+                    ticketDiv.classList.add('low');
+                }
+                ticketDiv.innerHTML = `${ticket.secuencial} - ${ticket.score} - ${ticket.size}
+                <button onclick="resolverTicket(${ticket.secuencial}, ${gestor.id})">Resolver</button>`;
+                autoAdjustFontSize(ticketDiv);
+                ticketsDiv.appendChild(ticketDiv);
+            });
+            return ticketsDiv;
+        }
+
+        function asignarTicket() {
+            if (pool.length === 0) {
+                alert("No hay tickets en el pool.");
+                return;
+            }
+
+            // Sort pool by descending risk (High > Medium > Low) and ascending size
+            pool.sort((a, b) => {
+                const scoreOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+                if (scoreOrder[a.score] === scoreOrder[b.score]) {
+                    return a.size - b.size; // Sort by size ascending
+                }
+                return scoreOrder[b.score] - scoreOrder[a.score]; // Sort by score descending
+            });
+
+            // Find the gestor with the least tickets
+            let gestorIndex = gestores.reduce((minIndex, currentGestor, currentIndex, array) => 
+                currentGestor.tickets.length < array[minIndex].tickets.length ? currentIndex : minIndex, 0);
+
+            // Assign the ticket to the gestor if they haven't reached MaxPorGestor
+            if (gestores[gestorIndex].tickets.length < MaxPorGestor) {
+                let ticket = pool.shift(); // Get the first ticket from the sorted pool
+                gestores[gestorIndex].tickets.push(ticket);
+                mostrarPool(pool);
+                mostrarGestores(gestores);
+            } else {
+                alert("Todos los gestores han alcanzado el número máximo de tickets.");
+            }
+        }
+
+        function resolverTicket(secuencial, gestorId) {
+            let gestor = gestores.find(g => g.id === gestorId);
+            let ticketIndex = gestor.tickets.findIndex(t => t.secuencial === secuencial);
+            if (ticketIndex > -1) {
+                let ticket = gestor.tickets.splice(ticketIndex, 1)[0];
+                mostrarGestores(gestores);
+
+                let resolvedContainer = document.getElementById('resueltos');
+                let resolvedDiv = document.createElement('div');
+                resolvedDiv.textContent = `Gestor ${gestor.id} - ${ticket.secuencial} - ${ticket.score} - ${ticket.size}`;
+                resolvedContainer.appendChild(resolvedDiv);
+
+                // Add the resolved ticket to the resueltos array
+                let now = new Date();
+                let timestamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+                resueltos.push({
+                    gestorId: gestor.id,
+                    secuencial: ticket.secuencial,
+                    score: ticket.score,
+                    size: ticket.size,
+                    timestamp: timestamp
+                });
+
+                updatePromediosTable();
+            }
+        }
+
+        function calculateAverage(arr, prop) {
+            const sum = arr.reduce((total, item) => total + item[prop], 0);
+            return (sum / arr.length).toFixed(2);
+        }
+
+        function updatePromediosTable() {
+            const promediosTableBody = document.getElementById('promedios-table').querySelector('tbody');
+            promediosTableBody.innerHTML = '';
+
+            const gestoresPromedios = gestores.map(gestor => {
+                const tickets = resueltos.filter(ticket => ticket.gestorId === gestor.id);
+                const avgSize = tickets.length ? calculateAverage(tickets, 'size') : 'N/A';
+                const avgScore = tickets.length ? calculateAverage(tickets.map(t => ({ score: t.score === 'High' ? 3 : t.score === 'Medium' ? 2 : 1 })), 'score') : 'N/A';
+
+                return {
+                    id: gestor.id,
+                    avgSize: avgSize,
+                    avgScore: avgScore
+                };
+            });
+
+            gestoresPromedios.forEach(promedio => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${promedio.id}</td>
+                    <td>${promedio.avgSize}</td>
+                    <td>${promedio.avgScore}</td>
+                `;
+                promediosTableBody.appendChild(row);
+            });
+        }
+
+        function downloadCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Gestor ID,Secuencial,Score,Size,Timestamp\n"; // Add headers
+            csvContent += resueltos.map(ticket => `${ticket.gestorId},${ticket.secuencial},${ticket.score},${ticket.size},${ticket.timestamp}`).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "resueltos.csv");
+            document.body.appendChild(link); // Required for FF
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
+
+
+
+
