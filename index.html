@@ -297,23 +297,34 @@
         function mostrarTickets(gestor) {
             let ticketsDiv = document.createElement('div');
             ticketsDiv.classList.add('tickets');
+
+            // Sort by score (High > Medium > Low) and size ascending
+            const scoreOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+            gestor.tickets.sort((a, b) => {
+            if (scoreOrder[a.score] === scoreOrder[b.score]) {
+                return a.size - b.size; // Sort by size ascending
+            }
+            return scoreOrder[b.score] - scoreOrder[a.score]; // Sort by score descending
+            });
+
             gestor.tickets.forEach(ticket => {
-                let ticketDiv = document.createElement('div');
-                ticketDiv.classList.add('ticket');
-                if (ticket.score === 'High') {
-                    ticketDiv.classList.add('high');
-                } else if (ticket.score === 'Medium') {
-                    ticketDiv.classList.add('medium');
-                } else if (ticket.score === 'Low') {
-                    ticketDiv.classList.add('low');
-                }
-                ticketDiv.innerHTML = `${ticket.secuencial} - ${ticket.score} - ${ticket.size}
-                <button onclick="resolverTicket(${ticket.secuencial}, ${gestor.id})">Resolver</button>`;
-                autoAdjustFontSize(ticketDiv);
-                ticketsDiv.appendChild(ticketDiv);
+            let ticketDiv = document.createElement('div');
+            ticketDiv.classList.add('ticket');
+            if (ticket.score === 'High') {
+                ticketDiv.classList.add('high');
+            } else if (ticket.score === 'Medium') {
+                ticketDiv.classList.add('medium');
+            } else if (ticket.score === 'Low') {
+                ticketDiv.classList.add('low');
+            }
+            ticketDiv.innerHTML = `${ticket.secuencial} - ${ticket.score} - ${ticket.size}
+            <button onclick="resolverTicket(${ticket.secuencial}, ${gestor.id})">Resolver</button>`;
+            autoAdjustFontSize(ticketDiv);
+            ticketsDiv.appendChild(ticketDiv);
             });
             return ticketsDiv;
-        }
+            }
+
 
 function asignarTicket() {
     if (pool.length === 0) {
